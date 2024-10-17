@@ -37,3 +37,15 @@ variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)
 }
+
+variable "instance_type" {
+  description = "EC2 instance type"
+  type        = string
+  default     = "t2.micro" 
+}
+
+# Define the custom AMI ID
+variable "custom_ami_id" {
+  description = "Custom AMI ID for EC2"
+  type        = string
+}

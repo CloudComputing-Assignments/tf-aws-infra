@@ -86,3 +86,79 @@ resource "aws_route_table_association" "private_association" {
   subnet_id      = aws_subnet.private_subnet[count.index].id
   route_table_id = aws_route_table.private_route_table.id
 }
+
+# Step 9: Create the Application Security Group
+resource "aws_security_group" "app_sg" {
+  vpc_id = aws_vpc.main_vpc.id
+  name   = "application-sg"
+
+  # Ingress rules for SSH, HTTP, HTTPS, and app port (8080)
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Egress rule to allow all outbound traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "app-security-group"
+  }
+}
+
+# Step 10: Create the EC2 Instance
+resource "aws_instance" "web_app" {
+  ami           = var.custom_ami_id # Pass your custom AMI ID
+  instance_type = var.instance_type # e.g., t2.micro
+
+  # Attach the Application Security Group using security group ID
+  vpc_security_group_ids = [aws_security_group.app_sg.id]
+
+  # Add key_name to associate the key pair for SSH access
+  key_name = "My-default-key" # Replace with the actual name of your key pair
+
+  # EC2 instance root volume configuration
+  root_block_device {
+    volume_size           = 25
+    volume_type           = "gp2"
+    delete_on_termination = true # Ensure volume is deleted when the instance is terminated
+  }
+
+  # Launch the EC2 instance in the public subnet
+  subnet_id = aws_subnet.public_subnet[0].id
+
+  # Disable termination protection
+  disable_api_termination = false
+
+  tags = {
+    Name = "web-app-instance"
+  }
+}
