@@ -49,3 +49,8 @@ variable "custom_ami_id" {
   description = "Custom AMI ID for EC2"
   type        = string
 }
+
+variable "domain_name" {
+  description = "domain name for A record"
+  type        = string
+}
