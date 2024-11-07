@@ -9,6 +9,11 @@ variable "aws_profile" {
   type        = string
 }
 
+variable "public_key" {
+  description = "AWS public key"
+  type        = string
+}
+
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string
