@@ -4,7 +4,7 @@ resource "aws_lambda_function" "verify_email_lambda" {
   handler       = "serverless/index.helloSNS"
   runtime       = "nodejs20.x" 
   role          = aws_iam_role.lambda_execution_role.arn
-  timeout       = 10
+  timeout       = 30
 
   environment {
     variables = {
@@ -17,10 +17,6 @@ resource "aws_lambda_function" "verify_email_lambda" {
     }
   }
 
-  vpc_config {
-    security_group_ids = [aws_security_group.app_sg.id]
-    subnet_ids = [for subnet in aws_subnet.public_subnet : subnet.id]
-  }
 }
 
 # resource "aws_iam_role" "lambda_execution_role" {
