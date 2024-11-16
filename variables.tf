@@ -14,6 +14,11 @@ variable "public_key" {
   type        = string
 }
 
+variable "sendgrid_api" {
+  description = "Sendgrid API key"
+  type = string
+}
+
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string

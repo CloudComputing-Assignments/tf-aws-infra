@@ -8,6 +8,7 @@ data "template_file" "user_data" {
     db_password = aws_db_instance.database.password
     aws_region  = var.aws_region
     aws_s3_bucket = aws_s3_bucket.bucket.bucket
+    sns_topic_arn = aws_sns_topic.verify_email.arn
   }
 }
 
@@ -138,6 +139,55 @@ resource "aws_iam_role" "webapp_ec2_access_role" {
   }
 }
 
+resource "aws_iam_policy" "lambda_management_policy" {
+  name        = "LambdaManagementPolicy"
+  description = "Allows Lambda function creation and management"
+
+  policy = jsonencode({
+    Version : "2012-10-17",
+    Statement : [
+      {
+        "Action" : [
+          "lambda:CreateFunction",
+          "lambda:InvokeFunction",
+          "lambda:UpdateFunctionConfiguration",
+          "lambda:UpdateFunctionCode",
+          "lambda:DeleteFunction"
+        ],
+        "Effect" : "Allow",
+        "Resource" : "*"
+      }
+    ]
+  })
+
+  tags = {
+    Name = "LambdaManagementPolicy"
+  }
+}
+
+resource "aws_iam_role_policy" "ec2_csye6225_sns_policy" {
+  name = "ec2_csye6225_sns_publish_policy"
+  role = aws_iam_role.webapp_ec2_access_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = "sns:Publish"
+        Resource = "arn:aws:sns:${var.aws_region}:605134447756:${aws_sns_topic.verify_email.name}"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy_attachment" "ec2_lambda_management_policy_role" {
+  name       = "ec2_lambda_management_policy_role"
+  roles      = [aws_iam_role.webapp_ec2_access_role.name]
+  policy_arn = aws_iam_policy.lambda_management_policy.arn
+}
+
+
 data "aws_iam_policy" "webapp_cloudwatch_server_policy" {
   arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
@@ -152,6 +202,12 @@ resource "aws_iam_policy_attachment" "ec2_cloudwatch_policy_role" {
   name       = "webapp_cloudwatch_policy"
   roles      = [aws_iam_role.webapp_ec2_access_role.name]
   policy_arn = data.aws_iam_policy.webapp_cloudwatch_server_policy.arn
+}
+
+resource "aws_iam_policy_attachment" "lambda_vpc_policy" {
+  name       = "LambdaVPCAccessExecutionRoleAttachment"
+  roles      = [aws_iam_role.webapp_ec2_access_role.name]
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
 resource "aws_iam_instance_profile" "ec2_s3_profile" {
