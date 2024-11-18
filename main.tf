@@ -120,3 +120,27 @@ resource "aws_security_group" "app_sg" {
     Name = "app-security-group"
   }
 }
+
+# Elastic IP for NAT Gateway
+resource "aws_eip" "nat" {
+  tags = {
+    Name = "NAT-EIP"
+  }
+}
+
+# NAT Gateway
+resource "aws_nat_gateway" "nat_gateway" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public_subnet[0].id
+
+  tags = {
+    Name = "NAT-Gateway"
+  }
+}
+
+# Update Private Route Table to Route to NAT Gateway
+resource "aws_route" "private_to_nat" {
+  route_table_id         = aws_route_table.private_route_table.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.nat_gateway.id
+}
