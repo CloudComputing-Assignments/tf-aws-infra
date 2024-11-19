@@ -175,7 +175,7 @@ resource "aws_iam_role_policy" "ec2_csye6225_sns_policy" {
       {
         Effect = "Allow"
         Action = "sns:Publish"
-        Resource = "arn:aws:sns:${var.aws_region}:605134447756:${aws_sns_topic.verify_email.name}"
+        Resource = aws_sns_topic.verify_email.arn
       }
     ]
   })

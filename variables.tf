@@ -14,6 +14,11 @@ variable "public_key" {
   type        = string
 }
 
+variable "aws_account_number"{
+  description = "AWS Account Number"
+  type = number
+}
+
 variable "sendgrid_api" {
   description = "Sendgrid API key"
   type = string
