@@ -10,6 +10,7 @@ echo "DB_USERNAME=${db_username}" >> .env
 echo "DB_PASSWORD=${db_password}" >> .env
 echo "AWS_REGION=us-east-1" >> .env
 echo "AWS_BUCKET_NAME=${aws_s3_bucket}" >> .env
+echo "SNS_TOPIC_ARN=${sns_topic_arn}" >> .env
 
 sudo systemctl enable webapp.service
 sudo systemctl start webapp.service
