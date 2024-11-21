@@ -1,10 +1,10 @@
 resource "aws_autoscaling_group" "asg" {
   name                = "csye6225_asg"
-  max_size            = 5
-  min_size            = 3
-  desired_capacity    = 3
+  max_size            = var.asg_max_size
+  min_size            = var.asg_min_size
+  desired_capacity    = var.asg_desired_capacity
   force_delete        = true
-  default_cooldown    = 60
+  default_cooldown    = var.asg_default_cooldown
   vpc_zone_identifier = [for subnet in aws_subnet.public_subnet : subnet.id]
   tag {
     key                 = "Name"
@@ -20,21 +20,21 @@ resource "aws_autoscaling_group" "asg" {
 
 resource "aws_autoscaling_policy" "scale-out" {
   name                   = "csye6225-asg-scale-out"
-  scaling_adjustment     = 1
+  scaling_adjustment     = var.scaling_out_adjustment
   adjustment_type        = "ChangeInCapacity"
-  cooldown               = 60
+  cooldown               = var.asg_default_cooldown
   autoscaling_group_name = aws_autoscaling_group.asg.name
 }
 
 resource "aws_cloudwatch_metric_alarm" "scale-out" {
   alarm_name          = "csye6225-asg-scale-out"
   comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = 2
+  evaluation_periods  = var.scaling_evaluation_period
   metric_name         = "CPUUtilization"
   namespace           = "AWS/EC2"
-  period              = 120
+  period              = var.scaling_period
   statistic           = "Average"
-  threshold           = 9
+  threshold           = var.scale_out_threshold
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.asg.name
   }
@@ -44,21 +44,21 @@ resource "aws_cloudwatch_metric_alarm" "scale-out" {
 
 resource "aws_autoscaling_policy" "scale-in" {
   name                   = "csye6225-asg-scale-in"
-  scaling_adjustment     = -1
+  scaling_adjustment     = var.scaling_in_adjustment
   adjustment_type        = "ChangeInCapacity"
-  cooldown               = 60
+  cooldown               = var.asg_default_cooldown
   autoscaling_group_name = aws_autoscaling_group.asg.name
 }
 
 resource "aws_cloudwatch_metric_alarm" "scale-in" {
   alarm_name          = "csye6225-asg-scale-in"
   comparison_operator = "LessThanOrEqualToThreshold"
-  evaluation_periods  = 2
+  evaluation_periods  = var.scaling_evaluation_period
   metric_name         = "CPUUtilization"
   namespace           = "AWS/EC2"
-  period              = 120
+  period              = var.scaling_period
   statistic           = "Average"
-  threshold           = 7.5
+  threshold           = var.scale_in_threshold
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.asg.name
   }
