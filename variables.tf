@@ -69,3 +69,103 @@ variable "domain_name" {
   description = "domain name for A record"
   type        = string
 }
+
+variable "asg_max_size" {
+  description = "maximum number of instances for auto scaling"
+  type = number
+}
+
+variable "asg_min_size" {
+  description = "minimum number of instances for auto scaling"
+  type = number
+}
+
+variable "asg_default_cooldown" {
+  description = "cooldown period for autoscaling group"
+  type = number
+}
+
+variable "asg_desired_capacity" {
+  description = "desired number of instances for auto scaling"
+  type = number
+}
+
+variable "scaling_out_adjustment" {
+  description = "Number of instances to spawn when scaling out"
+  type = number
+}
+
+variable "scaling_evaluation_period" {
+  description = "Evaluation period when scaling out"
+  type = number
+}
+
+variable "scaling_period" {
+  description = "Scaling period for instances"
+  type = number
+}
+
+variable "scale_out_threshold" {
+  description = "Threshold value when scaling out"
+  type = number
+}
+
+variable "scale_in_threshold" {
+  description = "Threshold value when scaling in"
+  type = number
+}
+
+variable "scaling_in_adjustment" {
+  description = "Number of instances to destroy when scaling in"
+  type = number
+}
+
+variable "launch_template_instance_type" {
+  description = "Instance type for ec2 launch template"
+  type = string
+}
+
+variable "ebs_volume_size" {
+  description = "Volume size for ebs"
+  type = number
+}
+
+variable "health_check_healthy_threshold" {
+  description = "Healthy threshold for load balancer health check"
+  type = number
+}
+
+variable "health_check_unhealthy_threshold" {
+  description = "Unhealthy threshold for load balancer health check"
+  type = number
+}
+
+variable "health_check_interval" {
+  description = "Interval for load balancer health check"
+  type = number
+}
+
+variable "health_check_timeout" {
+  description = "Timeout for load balancer health check"
+  type = number
+}
+
+variable "load_balancer_tg_port" {
+  description = "Port for load balancer target group"
+  type = number
+}
+
+variable "health_check_protocol" {
+  description = "Protocol for load balancer health check"
+  type = string
+}
+
+variable "health_check_path" {
+  description = "Port for instance health check"
+  type = string
+}
+
+variable "random_password_length" {
+  description = "Password length for RDS database"
+  type = number
+}

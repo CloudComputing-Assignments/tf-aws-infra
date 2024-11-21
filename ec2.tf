@@ -12,43 +12,11 @@ data "template_file" "user_data" {
   }
 }
 
-# Create the EC2 instance using the latest AMI
-# resource "aws_instance" "web_app" {
-#   ami                    = var.custom_ami_id
-#   instance_type          = var.instance_type # e.g., t2.micro
-
-#   # Attach the Application Security Group
-#   vpc_security_group_ids = [aws_security_group.app_sg.id]
-
-#   user_data              = data.template_file.user_data.rendered
-
-#   # Add key_name to associate the key pair for SSH access
-#   key_name = "My-default-key" # Replace with the actual name of your key pair
-#   iam_instance_profile = aws_iam_instance_profile.ec2_s3_profile.name
-
-#   # EC2 instance root volume configuration
-#   root_block_device {
-#     volume_size           = 25
-#     volume_type           = "gp2"
-#     delete_on_termination = true # Ensure volume is deleted when the instance is terminated
-#   }
-
-#   # Launch the EC2 instance in the public subnet
-#   subnet_id = aws_subnet.public_subnet[0].id
-
-#   # Disable termination protection
-#   disable_api_termination = false
-
-#   tags = {
-#     Name = "web-app-instance"
-#   }
-# }
-
 resource "aws_launch_template" "lt" {
   name                                 = "asg_launch_config"
   image_id                             = var.custom_ami_id
   instance_initiated_shutdown_behavior = "terminate"
-  instance_type                        = "t2.small"
+  instance_type                        = var.launch_template_instance_type
   key_name                             = "My-default-key"
 
   iam_instance_profile {
@@ -60,7 +28,7 @@ resource "aws_launch_template" "lt" {
 
     ebs {
       delete_on_termination = true
-      volume_size           = 50
+      volume_size           = var.ebs_volume_size
       volume_type           = "gp2"
     }
   }

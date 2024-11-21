@@ -1,11 +1,10 @@
-
 resource "aws_security_group" "lb_sg" {
   name        = "load balancer"
-  description = "Allow TLS inbound traffic"
+  description = "Allow TLS and HTTP inbound traffic over IPv4 and IPv6"
   vpc_id      = aws_vpc.main_vpc.id
 
   ingress {
-    description = "https from Anywhere"
+    description = "https from Anywhere (IPv4)"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
@@ -13,11 +12,27 @@ resource "aws_security_group" "lb_sg" {
   }
 
   ingress {
-    description = "http from anywhere"
+    description = "https from Anywhere (IPv6)"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  ingress {
+    description = "http from Anywhere (IPv4)"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "http from Anywhere (IPv6)"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   egress {
@@ -25,6 +40,7 @@ resource "aws_security_group" "lb_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   tags = {
@@ -48,20 +64,20 @@ resource "aws_lb" "lb" {
 
 resource "aws_lb_target_group" "alb_tg" {
   name        = "csye6225-lb-alb-tg"
-  port        = 3000
+  port        = var.load_balancer_tg_port
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main_vpc.id
   target_type = "instance"
 
   health_check {
     enabled             = true
-    path                = "/healthz"
+    path                = var.health_check_path
     port                = "traffic-port"
-    protocol            = "HTTP"
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    timeout             = 6
-    interval            = 30
+    protocol            = var.health_check_protocol
+    healthy_threshold   = var.health_check_healthy_threshold
+    unhealthy_threshold = var.health_check_unhealthy_threshold
+    timeout             = var.health_check_timeout
+    interval            = var.health_check_interval
   }
 }
 

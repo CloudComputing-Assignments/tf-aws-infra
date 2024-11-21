@@ -1,5 +1,5 @@
 resource "random_password" "password" {
-  length  = 16
+  length  = var.random_password_length
   special = false
 }
 
@@ -31,13 +31,6 @@ resource "aws_security_group" "database_sg" {
     protocol        = "tcp"
     security_groups = [aws_security_group.app_sg.id]
   }
-
-  # egress {
-  #   from_port   = 0
-  #   to_port     = 0
-  #   protocol    = -1
-  #   cidr_blocks = ["0.0.0.0/0"]
-  # }
 
   tags = {
     Name = "database"
