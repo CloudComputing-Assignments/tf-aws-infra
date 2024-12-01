@@ -169,3 +169,8 @@ variable "random_password_length" {
   description = "Password length for RDS database"
   type = number
 }
+
+variable "iam_username" {
+  description = "User name for IAM"
+  type = string
+}

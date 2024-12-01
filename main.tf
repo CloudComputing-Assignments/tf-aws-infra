@@ -144,3 +144,5 @@ resource "aws_route" "private_to_nat" {
   destination_cidr_block = "0.0.0.0/0"
   nat_gateway_id         = aws_nat_gateway.nat_gateway.id
 }
+
+data "aws_caller_identity" "current" {}
