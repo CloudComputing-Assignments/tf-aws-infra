@@ -110,3 +110,25 @@ resource "aws_secretsmanager_secret_version" "rds_password_value" {
   })
 }
 
+resource "aws_kms_key" "sendgrid_key" {
+  description             = "KMS key for SendGrid API secret"
+  enable_key_rotation     = true
+  deletion_window_in_days = 7
+}
+
+
+resource "aws_secretsmanager_secret" "sendgrid_api_secret" {
+  name        = "sendgrid-api-key-v1"
+  description = "SendGrid API Key"
+  recovery_window_in_days = 0
+  kms_key_id  = aws_kms_key.sendgrid_key.arn
+}
+
+resource "aws_secretsmanager_secret_version" "sendgrid_api_key_value" {
+  secret_id     = aws_secretsmanager_secret.sendgrid_api_secret.id
+  secret_string = jsonencode({
+    SENDGRID_API_KEY = var.sendgrid_api
+  })
+}
+
+
