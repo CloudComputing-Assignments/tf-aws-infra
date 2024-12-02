@@ -8,59 +8,60 @@ resource "aws_kms_key" "s3" {
   enable_key_rotation      = true
 
   policy = jsonencode({
-    "Version": "2012-10-17",
-    "Id": "key-for-s3",
-    "Statement": [
+    "Version" : "2012-10-17",
+    "Id" : "key-for-s3",
+    "Statement" : [
       {
-        "Sid": "Enable IAM User Permissions",
-        "Effect": "Allow",
-        "Principal": {
-          "AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        "Sid" : "Enable IAM User Permissions",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
         },
-        "Action": "kms:*",
-        "Resource": "*"
+        "Action" : "kms:*",
+        "Resource" : "*"
       },
       {
-        "Sid": "Allow S3 use of the key",
-        "Effect": "Allow",
-        "Principal": {
-          "Service": "s3.amazonaws.com"
+        "Sid" : "Allow S3 use of the key",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "s3.amazonaws.com"
         },
-        "Action": [
+        "Action" : [
           "kms:Encrypt",
           "kms:Decrypt",
           "kms:ReEncrypt*",
           "kms:GenerateDataKey*",
           "kms:DescribeKey"
         ],
-        "Resource": "*",
-        "Condition": {
-          "StringEquals": {
-            "kms:ViaService": "s3.${var.aws_region}.amazonaws.com",
-            "aws:SourceAccount": "${data.aws_caller_identity.current.account_id}"
-          }
-        }
+        "Resource" : "*"
       },
       {
-        "Sid": "Allow attachment of persistent resources",
-        "Effect": "Allow",
-        "Principal": {
-          "Service": "s3.amazonaws.com"
+        "Sid" : "Allow EC2 Instance Role",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.id}:role/EC2-CSYE6225"
         },
-        "Action": [
+        "Action" : [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Sid" : "Allow attachment of persistent resources",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "s3.amazonaws.com"
+        },
+        "Action" : [
           "kms:CreateGrant",
           "kms:ListGrants",
           "kms:RevokeGrant"
         ],
-        "Resource": "*",
-        "Condition": {
-          "Bool": {
-            "kms:GrantIsForAWSResource": "true"
-          },
-          "StringEquals": {
-            "kms:ViaService": "s3.${var.aws_region}.amazonaws.com"
-          }
-        }
+        "Resource" : "*"
       }
     ]
   })

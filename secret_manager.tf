@@ -86,8 +86,8 @@ resource "aws_kms_key_policy" "secret_manager_key_policy" {
 
 
 resource "aws_secretsmanager_secret" "new_rds_password" {
-  name        = "rds-db-password-v2"
-  description = "Password for RDS database"
+  name                    = "rds-db-password-v2"
+  description             = "Password for RDS database"
   kms_key_id              = aws_kms_key.secret_manager_key.arn
   recovery_window_in_days = 0
   # lifecycle {
@@ -103,10 +103,10 @@ resource "random_password" "password" {
 
 # Store the generated password as a secret in Secrets Manager
 resource "aws_secretsmanager_secret_version" "rds_password_value" {
-  secret_id     = aws_secretsmanager_secret.new_rds_password.id
+  secret_id = aws_secretsmanager_secret.new_rds_password.id
   secret_string = jsonencode({
     username = "csye6225"
-    password = random_password.password.result  # Use the random password here
+    password = random_password.password.result # Use the random password here
   })
 }
 
@@ -118,14 +118,14 @@ resource "aws_kms_key" "sendgrid_key" {
 
 
 resource "aws_secretsmanager_secret" "sendgrid_api_secret" {
-  name        = "sendgrid-api-key-v1"
-  description = "SendGrid API Key"
+  name                    = "sendgrid-api-key-v1"
+  description             = "SendGrid API Key"
   recovery_window_in_days = 0
-  kms_key_id  = aws_kms_key.sendgrid_key.arn
+  kms_key_id              = aws_kms_key.sendgrid_key.arn
 }
 
 resource "aws_secretsmanager_secret_version" "sendgrid_api_key_value" {
-  secret_id     = aws_secretsmanager_secret.sendgrid_api_secret.id
+  secret_id = aws_secretsmanager_secret.sendgrid_api_secret.id
   secret_string = jsonencode({
     SENDGRID_API_KEY = var.sendgrid_api
   })

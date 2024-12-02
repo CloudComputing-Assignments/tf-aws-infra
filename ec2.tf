@@ -1,12 +1,12 @@
 data "template_file" "user_data" {
   template = file("${path.module}/user_data.tpl")
   vars = {
-    db_port     = 3306
-    db_host     = aws_db_instance.database.address
-    db_name     = aws_db_instance.database.db_name
-    db_username = aws_db_instance.database.username
-    db_password = aws_db_instance.database.password
-    aws_region  = var.aws_region
+    db_port       = 3306
+    db_host       = aws_db_instance.database.address
+    db_name       = aws_db_instance.database.db_name
+    db_username   = aws_db_instance.database.username
+    db_password   = aws_db_instance.database.password
+    aws_region    = var.aws_region
     aws_s3_bucket = aws_s3_bucket.bucket.bucket
     sns_topic_arn = aws_sns_topic.verify_email.arn
   }
@@ -211,6 +211,35 @@ resource "aws_iam_policy" "lambda_management_policy" {
   }
 }
 
+resource "aws_iam_role_policy" "ec2_s3_kms_policy" {
+  name = "ec2_s3_kms_policy"
+  role = "EC2-CSYE6225"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:ListBucket",
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ]
+        Resource = [
+          aws_s3_bucket.bucket.arn,
+          "${aws_s3_bucket.bucket.arn}/*",
+          aws_kms_key.s3.arn
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy" "ec2_csye6225_sns_policy" {
   name = "ec2_csye6225_sns_publish_policy"
   role = aws_iam_role.webapp_ec2_access_role.id
@@ -219,8 +248,8 @@ resource "aws_iam_role_policy" "ec2_csye6225_sns_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = "sns:Publish"
+        Effect   = "Allow"
+        Action   = "sns:Publish"
         Resource = aws_sns_topic.verify_email.arn
       }
     ]

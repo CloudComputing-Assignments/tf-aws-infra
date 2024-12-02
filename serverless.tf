@@ -60,7 +60,7 @@ resource "aws_iam_policy" "lambda_kms_access_policy" {
           "kms:DescribeKey"
         ]
         Resource = [
-          aws_kms_key.sendgrid_key.arn  
+          aws_kms_key.sendgrid_key.arn
         ]
       }
     ]

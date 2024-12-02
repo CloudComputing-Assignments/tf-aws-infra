@@ -1,9 +1,9 @@
 resource "aws_kms_key" "rds_kms_key" {
-  description             = "KMS key for RDS encryption"
-  deletion_window_in_days = 7
-  enable_key_rotation     = true
+  description              = "KMS key for RDS encryption"
+  deletion_window_in_days  = 7
+  enable_key_rotation      = true
   customer_master_key_spec = "SYMMETRIC_DEFAULT"
-  multi_region            = true
+  multi_region             = true
 }
 
 resource "aws_kms_key_policy" "rds_kms_key_policy" {
@@ -70,7 +70,7 @@ resource "aws_kms_key_policy" "rds_kms_key_policy" {
 
 # Fetch the secret version
 data "aws_secretsmanager_secret_version" "rds_password_value" {
-  secret_id = aws_secretsmanager_secret.new_rds_password.id  # Reference the created secret
+  secret_id  = aws_secretsmanager_secret.new_rds_password.id # Reference the created secret
   depends_on = [aws_secretsmanager_secret_version.rds_password_value]
 }
 
