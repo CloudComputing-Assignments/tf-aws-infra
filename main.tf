@@ -5,8 +5,8 @@ provider "aws" {
 
 # VPC
 resource "aws_vpc" "main_vpc" {
-  cidr_block = var.vpc_cidr
-  enable_dns_support = true
+  cidr_block           = var.vpc_cidr
+  enable_dns_support   = true
   enable_dns_hostnames = true
 
   tags = var.tags
@@ -48,9 +48,9 @@ resource "aws_route_table" "private_route_table" {
 resource "aws_subnet" "public_subnet" {
   count = 3
 
-  vpc_id     = aws_vpc.main_vpc.id
-  cidr_block = var.public_subnet_cidrs[count.index]
-  availability_zone = var.availability_zones[count.index]
+  vpc_id                  = aws_vpc.main_vpc.id
+  cidr_block              = var.public_subnet_cidrs[count.index]
+  availability_zone       = var.availability_zones[count.index]
   map_public_ip_on_launch = true
 
   tags = {
@@ -62,8 +62,8 @@ resource "aws_subnet" "public_subnet" {
 resource "aws_subnet" "private_subnet" {
   count = 3
 
-  vpc_id     = aws_vpc.main_vpc.id
-  cidr_block = var.private_subnet_cidrs[count.index]
+  vpc_id            = aws_vpc.main_vpc.id
+  cidr_block        = var.private_subnet_cidrs[count.index]
   availability_zone = var.availability_zones[count.index]
 
   tags = {
@@ -92,18 +92,18 @@ resource "aws_security_group" "app_sg" {
   vpc_id = aws_vpc.main_vpc.id
   name   = "app-sg"
 
-  
+
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] 
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
+    from_port = 3000
+    to_port   = 3000
+    protocol  = "tcp"
     //cidr_blocks = ["0.0.0.0/0"]
     security_groups = [aws_security_group.lb_sg.id]
   }
@@ -144,3 +144,5 @@ resource "aws_route" "private_to_nat" {
   destination_cidr_block = "0.0.0.0/0"
   nat_gateway_id         = aws_nat_gateway.nat_gateway.id
 }
+
+data "aws_caller_identity" "current" {}

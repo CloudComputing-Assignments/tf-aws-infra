@@ -1,16 +1,94 @@
 data "template_file" "user_data" {
   template = file("${path.module}/user_data.tpl")
   vars = {
-    db_port     = 3306
-    db_host     = aws_db_instance.database.address
-    db_name     = aws_db_instance.database.db_name
-    db_username = aws_db_instance.database.username
-    db_password = aws_db_instance.database.password
-    aws_region  = var.aws_region
+    db_port       = 3306
+    db_host       = aws_db_instance.database.address
+    db_name       = aws_db_instance.database.db_name
+    db_username   = aws_db_instance.database.username
+    db_password   = aws_db_instance.database.password
+    aws_region    = var.aws_region
     aws_s3_bucket = aws_s3_bucket.bucket.bucket
     sns_topic_arn = aws_sns_topic.verify_email.arn
   }
 }
+
+resource "aws_kms_key" "ebs" {
+  description = "EBS KMS key"
+  policy = jsonencode({
+    "Id" : "key-for-ebs",
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Sid" : "Enable IAM User Permissions",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.id}:root"
+        },
+        "Action" : "kms:*",
+        "Resource" : "*"
+      },
+      {
+        "Sid" : "Allow access for Key Administrators",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.id}:root"
+        },
+        "Action" : [
+          "kms:Create*",
+          "kms:Describe*",
+          "kms:Enable*",
+          "kms:List*",
+          "kms:Put*",
+          "kms:Update*",
+          "kms:Revoke*",
+          "kms:Disable*",
+          "kms:Get*",
+          "kms:Delete*",
+          "kms:TagResource",
+          "kms:UntagResource",
+          "kms:ScheduleKeyDeletion",
+          "kms:CancelKeyDeletion",
+          "kms:PutKeyPolicy"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Sid" : "Allow use of the key",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+        },
+        "Action" : [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ],
+        "Resource" : "*",
+      },
+      {
+        "Sid" : "Allow attachment of persistent resources",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+        },
+        "Action" : [
+          "kms:CreateGrant",
+          "kms:ListGrants",
+          "kms:RevokeGrant"
+        ],
+        "Resource" : "*",
+        "Condition" : {
+          "Bool" : {
+            "kms:GrantIsForAWSResource" : "true"
+          }
+        }
+      }
+    ]
+  })
+}
+
 
 resource "aws_launch_template" "lt" {
   name                                 = "asg_launch_config"
@@ -30,17 +108,16 @@ resource "aws_launch_template" "lt" {
       delete_on_termination = true
       volume_size           = var.ebs_volume_size
       volume_type           = "gp2"
+      encrypted             = true
+      kms_key_id            = aws_kms_key.ebs.arn
     }
   }
 
   network_interfaces {
     associate_public_ip_address = true
     delete_on_termination       = true
-    # using vpc_security_group_ids instead
-    security_groups = [aws_security_group.app_sg.id]
+    security_groups             = [aws_security_group.app_sg.id]
   }
-
-  # vpc_security_group_ids = [aws_security_group.vpc.id]
 
   tag_specifications {
     resource_type = "instance"
@@ -52,6 +129,7 @@ resource "aws_launch_template" "lt" {
 
   user_data = base64encode(data.template_file.user_data.rendered)
 }
+
 
 
 resource "aws_iam_policy" "webapp_s3_policy" {
@@ -133,6 +211,35 @@ resource "aws_iam_policy" "lambda_management_policy" {
   }
 }
 
+resource "aws_iam_role_policy" "ec2_s3_kms_policy" {
+  name = "ec2_s3_kms_policy"
+  role = "EC2-CSYE6225"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:ListBucket",
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ]
+        Resource = [
+          aws_s3_bucket.bucket.arn,
+          "${aws_s3_bucket.bucket.arn}/*",
+          aws_kms_key.s3.arn
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy" "ec2_csye6225_sns_policy" {
   name = "ec2_csye6225_sns_publish_policy"
   role = aws_iam_role.webapp_ec2_access_role.id
@@ -141,8 +248,8 @@ resource "aws_iam_role_policy" "ec2_csye6225_sns_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = "sns:Publish"
+        Effect   = "Allow"
+        Action   = "sns:Publish"
         Resource = aws_sns_topic.verify_email.arn
       }
     ]

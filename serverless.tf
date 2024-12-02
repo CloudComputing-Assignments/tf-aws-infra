@@ -13,7 +13,7 @@ resource "aws_lambda_function" "verify_email_lambda" {
       db_name          = aws_db_instance.database.db_name
       db_username      = aws_db_instance.database.username
       db_password      = aws_db_instance.database.password
-      SENDGRID_API_KEY = var.sendgrid_api
+      SENDGRID_API_KEY = aws_secretsmanager_secret.sendgrid_api_secret.name
     }
   }
 
@@ -22,8 +22,60 @@ resource "aws_lambda_function" "verify_email_lambda" {
     subnet_ids         = aws_subnet.private_subnet[*].id
     security_group_ids = [aws_security_group.app_sg.id]
   }
+}
+
+resource "aws_iam_policy" "lambda_secrets_manager_access" {
+  name        = "lambda_secrets_manager_access"
+  description = "IAM policy for Lambda to access Secrets Manager"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = [
+          aws_secretsmanager_secret.sendgrid_api_secret.arn,
+          "${aws_secretsmanager_secret.sendgrid_api_secret.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "lambda_kms_access_policy" {
+  name        = "lambda_kms_access_policy"
+  description = "IAM policy for Lambda to access KMS"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey"
+        ]
+        Resource = [
+          aws_kms_key.sendgrid_key.arn
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_kms_access_attachment" {
+  role       = aws_iam_role.lambda_execution_role.name
+  policy_arn = aws_iam_policy.lambda_kms_access_policy.arn
+}
 
 
+resource "aws_iam_role_policy_attachment" "lambda_secrets_manager_access_attachment" {
+  role       = aws_iam_role.lambda_execution_role.name
+  policy_arn = aws_iam_policy.lambda_secrets_manager_access.arn
 }
 
 

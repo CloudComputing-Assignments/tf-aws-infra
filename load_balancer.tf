@@ -12,10 +12,10 @@ resource "aws_security_group" "lb_sg" {
   }
 
   ingress {
-    description = "https from Anywhere (IPv6)"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
+    description      = "https from Anywhere (IPv6)"
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
     ipv6_cidr_blocks = ["::/0"]
   }
 
@@ -28,18 +28,18 @@ resource "aws_security_group" "lb_sg" {
   }
 
   ingress {
-    description = "http from Anywhere (IPv6)"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
+    description      = "http from Anywhere (IPv6)"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
     ipv6_cidr_blocks = ["::/0"]
   }
 
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
 
@@ -81,13 +81,41 @@ resource "aws_lb_target_group" "alb_tg" {
   }
 }
 
-resource "aws_lb_listener" "lb_listener" {
+resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.lb.arn
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.lb.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = data.aws_acm_certificate.ssl.arn
+
+  default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.alb_tg.arn
   }
+}
+
+data "aws_acm_certificate" "ssl" {
+  domain   = var.domain_name
+  statuses = ["ISSUED"]
+}
+
+resource "aws_lb_listener_certificate" "lb_certificate" {
+  listener_arn    = aws_lb_listener.https.arn
+  certificate_arn = data.aws_acm_certificate.ssl.arn
 }
